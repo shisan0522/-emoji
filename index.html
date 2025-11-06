@@ -1,438 +1,154 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="zh-CN">
 <head>
-<meta charset="utf-8" />
-<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
-<title>合成Emoji - 重力版</title>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>合成Emoji · 重力版</title>
 <style>
-  :root{
-    --bg1: #fff6ea; /* 奶油 */
-    --bg2: #ffeaf0; /* 粉 */
-    --card: rgba(255,255,255,0.6);
-    --accent: #ff7aa2;
-    --shadow: 0 8px 28px rgba(16,16,16,0.12);
-    --glass: rgba(255,255,255,0.5);
+  body {
+    margin: 0;
+    background: linear-gradient(180deg, #fff8f3 0%, #ffeef5 100%);
+    font-family: "SF Pro Rounded", "Segoe UI", sans-serif;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    height: 100vh;
+    color: #5a4a42;
   }
-  html,body{height:100%;margin:0;-webkit-user-select:none;user-select:none;touch-action:manipulation;}
-  body{
-    background: linear-gradient(160deg,var(--bg1),var(--bg2));
-    font-family: "Helvetica Neue", "PingFang SC", "Noto Sans", Arial, sans-serif;
-    -webkit-font-smoothing:antialiased;
-    display:flex;
-    align-items:center;
-    justify-content:center;
-    padding:env(safe-area-inset-bottom) 0 env(safe-area-inset-bottom);
-    height:100vh;
-    box-sizing:border-box;
+
+  h1 {
+    font-size: 1.4rem;
+    margin: 16px;
   }
-  .app{width:100%;max-width:460px;height:100%;display:flex;flex-direction:column;gap:10px;padding:14px;box-sizing:border-box;}
-  header{display:flex;align-items:center;justify-content:space-between;gap:8px;}
-  .title{display:flex;gap:10px;align-items:center;}
-  .logo{width:48px;height:48px;border-radius:12px;background:linear-gradient(135deg,#fff,#ffe6f0);display:flex;align-items:center;justify-content:center;font-size:22px;box-shadow:var(--shadow);}
-  h1{font-size:16px;margin:0;color:#38242a;font-weight:700}
-  p.sub{margin:0;font-size:12px;color:#6a4d52;opacity:0.9}
-  .controls{display:flex;gap:8px;align-items:center}
-  button{border:0;padding:8px 12px;border-radius:12px;background:var(--card);backdrop-filter:blur(6px);box-shadow:var(--shadow);font-weight:600;color:#38242a;}
-  button.small{padding:6px 8px;font-size:13px}
-  .board-wrap{flex:1;display:flex;align-items:center;justify-content:center;}
-  .board{width:100%;height:100%;border-radius:18px;background: linear-gradient(180deg, rgba(255,255,255,0.4), rgba(255,255,255,0.24));box-shadow: 0 12px 36px rgba(19,15,20,0.12);position:relative;overflow:hidden;padding:14px;box-sizing:border-box;touch-action: none;-webkit-tap-highlight-color: transparent;}
-  .tile{position:absolute;display:flex;align-items:center;justify-content:center;border-radius:14px;font-size:26px;width:56px;height:56px;user-select:none;touch-action:none;transition:transform 160ms cubic-bezier(.2,.9,.3,1), box-shadow 160ms;will-change:transform,left,top;background:linear-gradient(180deg, rgba(255,255,255,0.95), rgba(255,255,255,0.9));box-shadow: 0 8px 20px rgba(0,0,0,0.08);border: 1px solid rgba(0,0,0,0.03);}
-  .tile.dragging{z-index:999; transform:scale(1.06); box-shadow: 0 18px 36px rgba(0,0,0,0.18);}
-  .hud{display:flex;align-items:center;gap:10px;}
-  .hint{font-size:13px;color:#5e3d40;background:var(--glass);padding:8px 10px;border-radius:12px;box-shadow:0 6px 18px rgba(0,0,0,0.06);}
-  footer{display:flex;justify-content:space-between;align-items:center;padding-top:6px;}
-  .msg{font-size:13px;color:#6a4d52}
-  .small{font-size:12px;color:#6a4d52;opacity:0.9}
-  .overlay{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;background:linear-gradient(180deg, rgba(255,255,255,0.04), rgba(255,255,255,0.02));pointer-events:none;}
-  .win{pointer-events:auto;background:linear-gradient(180deg,#fff,#ffeaf3);border-radius:18px;padding:18px 20px;text-align:center;box-shadow:var(--shadow);}
-  @media (min-width:800px){.app{height:820px;border-radius:18px;padding:18px;background:transparent}}
+
+  #score {
+    background: #fff4f4;
+    padding: 6px 14px;
+    border-radius: 18px;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+    font-weight: 600;
+  }
+
+  #game {
+    position: relative;
+    flex: 1;
+    width: 90%;
+    max-width: 400px;
+    background: rgba(255, 255, 255, 0.8);
+    border-radius: 30px;
+    box-shadow: inset 0 0 15px rgba(0,0,0,0.05);
+    overflow: hidden;
+  }
+
+  .emoji {
+    position: absolute;
+    font-size: 40px;
+    user-select: none;
+    transition: transform 0.1s;
+  }
+
+  #tip {
+    margin: 12px;
+    font-size: 0.9rem;
+    opacity: 0.6;
+  }
 </style>
 </head>
 <body>
-<div class="app" id="app">
-  <header>
-    <div class="title">
-      <div class="logo">🍬</div>
-      <div>
-        <h1>合成Emoji（重力版）</h1>
-        <p class="sub">摇一摇手机让里面的表情跟着掉落</p >
-      </div>
-    </div>
-    <div class="controls">
-      <div class="hud"><div class="hint" id="score">分数: 0</div></div>
-      <button id="resetBtn" class="small">重置</button>
-      <button id="shareBtn" class="small">分享</button>
-    </div>
-  </header>
-
-  <div class="board-wrap">
-    <div class="board" id="board" aria-label="gameboard">
-      <div id="overlay" class="overlay" style="display:none">
-        <div class="win" id="winBox">
-          <div id="winEmoji" style="font-size:44px">🍉</div>
-          <h3 style="margin:8px 0 4px;color:#4a2a2f">你合成到最高等级啦！</h3>
-          <p class="small" style="margin:0 0 12px;color:#5c3a3f">继续玩或点击重置～</p >
-          <div style="display:flex;gap:8px;justify-content:center">
-            <button id="winReset">再来一次</button>
-            <button id="closeWin" style="background:transparent;">继续</button>
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <footer>
-    <div class="msg">提示：拖动相同表情合成更高级；也可以倾斜手机让它们滑动</div>
-    <div class="small">使用公开 Emoji • 免版权</div>
-  </footer>
-</div>
+  <h1>🍬 合成Emoji（重力版）</h1>
+  <div id="score">分数：0</div>
+  <div id="game"></div>
+  <div id="tip">提示：拖动相同表情合成更高级；也可以摇晃手机让它们滑动 🍑</div>
 
 <script>
-/* —— 配置区 —— */
-const EMOJIS = ["🥺","🤤","🥰","🍑","🍓","🍎","🍉","🍋","🥐","🍔","🥞","🍤","🥮","🍘","🎂","🍮","❤️"];
-const BASE_LEVEL = 0;
-const SPAWN_COUNT_INITIAL = 5;
-const MAX_TILES = 20;
-const BOARD_PADDING = 12;
-const MERGE_DISTANCE_FACTOR = 0.45; // 合成阈值因子
-const GRAVITY_SCALE = 0.8; // 重力强度调节
-const FRICTION = 0.98; // 速度阻尼
-/* —— 结束配置 —— */
-
-const board = document.getElementById('board');
-const resetBtn = document.getElementById('resetBtn');
-const shareBtn = document.getElementById('shareBtn');
-const scoreEl = document.getElementById('score');
-const overlay = document.getElementById('overlay');
-const winEmoji = document.getElementById('winEmoji');
-const winReset = document.getElementById('winReset');
-const closeWin = document.getElementById('closeWin');
-
-let tiles = []; // {id, level, el, x,y,size, vx,vy}
+const EMOJIS = ["🥺", "🤤", "🥰", "🍑", "🍓", "🍎", "🍉", "🍋", "🥐", "🍔", "🥞", "🍤", "🥮", "🍘", "🎂", "🍮", "❤️"];
+const game = document.getElementById("game");
+const scoreDisplay = document.getElementById("score");
 let score = 0;
-let tileIdCounter = 1;
-let boardRect = null;
-let gravity = {x:0, y:0.6}; // 默认朝下
-let lastTimestamp = null;
-let animationRunning = true;
 
-// ------- 初始化与工具函数 -------
-function measureBoard(){ boardRect = board.getBoundingClientRect(); }
-function updateScore(){ scoreEl.textContent = '分数: ' + score; }
-function randomPosition(size){
-  const pad = BOARD_PADDING + 8;
-  const minX = pad;
-  const maxX = Math.max(minX, boardRect.width - size - pad);
-  const minY = pad;
-  const maxY = Math.max(minY, boardRect.height - size - pad - 60);
-  return { x: minX + Math.random()*(maxX-minX), y: minY + Math.random()*(maxY-minY) };
-}
-function findTileIndexById(id){ return tiles.findIndex(t => t.id === id); }
-function safeRemoveTileById(id){
-  const idx = findTileIndexById(id); if(idx === -1) return; const t = tiles[idx];
-  try{ if(t.el && t.el.parentNode) t.el.parentNode.removeChild(t.el); }catch(e){} tiles.splice(idx,1);
+const sizeBase = 50;
+const emojis = [];
+
+function createEmoji(level, x, y) {
+  const div = document.createElement("div");
+  div.className = "emoji";
+  div.textContent = EMOJIS[level];
+  div.style.left = x + "px";
+  div.style.top = y + "px";
+  div.style.fontSize = (sizeBase + level * 4) + "px";
+  game.appendChild(div);
+
+  const obj = { el: div, level, x, y, vx: 0, vy: 0 };
+  emojis.push(obj);
+  return obj;
 }
 
-// 创建 tile DOM 并加入数组
-function createTile(level, x, y, size){
-  const id = 't' + (tileIdCounter++);
-  const el = document.createElement('div');
-  el.className = 'tile';
-  el.style.width = size + 'px';
-  el.style.height = size + 'px';
-  el.style.left = x + 'px';
-  el.style.top = y + 'px';
-  el.dataset.id = id;
-  el.dataset.level = level;
-  el.innerHTML = '<span class="emoji" aria-hidden="true" style="line-height:1; font-size:' + Math.round(size*0.55) + 'px">' + EMOJIS[level] + '</span>';
-  board.appendChild(el);
-  const tile = { id, level, el, x, y, size, vx:0, vy:0, mass: 1 + level*0.15 };
-  tiles.push(tile);
-  makeDraggable(el);
-  return tile;
+function spawn() {
+  const x = Math.random() * (game.clientWidth - 60);
+  createEmoji(0, x, 10);
 }
 
-function spawnRandom(level){
-  if(tiles.length >= MAX_TILES) return false;
-  const size = 56 + level*6;
-  const p = randomPosition(size);
-  return createTile(level, p.x, p.y, size);
-}
+function updatePhysics() {
+  const gravity = 0.3;
+  for (let e of emojis) {
+    e.vy += gravity;
+    e.x += e.vx;
+    e.y += e.vy;
 
-// 若当前没有任何可合并对，强行放一对可合并的基础块（避免死局）
-function ensurePossibleMerge(){
-  if(tiles.length < 2) return;
-  if(possibleMergeExists()) return;
-  // 找一个空位置成对生成两个同级块，靠得比较近
-  const level = BASE_LEVEL;
-  const size = 56 + level*6;
-  const p = randomPosition(size*1.2);
-  // 创建两个靠近的
-  createTile(level, p.x, p.y, size);
-  createTile(level, Math.min(boardRect.width - size - 8, p.x + size*0.6), Math.min(boardRect.height - size - 8, p.y + size*0.1), size);
-}
-
-// 判断是否存在可合并对（同级且距离小于阈值）
-function possibleMergeExists(){
-  for(let i=0;i<tiles.length;i++){
-    for(let j=i+1;j<tiles.length;j++){
-      if(tiles[i].level !== tiles[j].level) continue;
-      const ax = tiles[i].x + tiles[i].size/2, ay = tiles[i].y + tiles[i].size/2;
-      const bx = tiles[j].x + tiles[j].size/2, by = tiles[j].y + tiles[j].size/2;
-      const d = Math.hypot(ax-bx, ay-by);
-      const thresh = (tiles[i].size + tiles[j].size) * MERGE_DISTANCE_FACTOR * 1.05;
-      if(d <= thresh) return true;
+    if (e.y > game.clientHeight - 60) {
+      e.y = game.clientHeight - 60;
+      e.vy *= -0.5;
     }
-  }
-  return false;
-}
-
-// 找到距离最近的 tile
-function findNearest(tile){
-  const cx = tile.x + tile.size/2, cy = tile.y + tile.size/2;
-  let best = null; let bestDist = Infinity;
-  for(const t of tiles){
-    if(t.id === tile.id) continue;
-    const tx = t.x + t.size/2, ty = t.y + t.size/2;
-    const dx = tx - cx, dy = ty - cy;
-    const dist = Math.hypot(dx,dy);
-    if(dist < bestDist){ bestDist = dist; best = t; }
-  }
-  return {tile: best, dist: bestDist};
-}
-
-// 合成检测
-function tryMerge(a,b){
-  if(!a || !b) return false;
-  if(a.level !== b.level) return false;
-  const ax = a.x + a.size/2, ay = a.y + a.size/2;
-  const bx = b.x + b.size/2, by = b.y + b.size/2;
-  const d = Math.hypot(ax-bx, ay-by);
-  return d <= (a.size + b.size) * MERGE_DISTANCE_FACTOR;
-}
-
-function doMerge(source, target){
-  if(!source || !target) return;
-  if(source.id === target.id) return;
-  if(source.level !== target.level) return;
-  const nextLevel = Math.min(source.level + 1, EMOJIS.length - 1);
-  // target 升级：更新 level、size、文本、font-size
-  target.level = nextLevel;
-  target.el.dataset.level = nextLevel;
-  target.size = 56 + nextLevel*6;
-  const emojiSpan = target.el.querySelector('.emoji');
-  if(emojiSpan) emojiSpan.textContent = EMOJIS[nextLevel];
-  target.el.style.width = target.size + 'px';
-  target.el.style.height = target.size + 'px';
-  // 更新 font-size 相对大小
-  if(emojiSpan) emojiSpan.style.fontSize = Math.round(target.size*0.55) + 'px';
-
-  // 源淡出并移除
-  source.el.style.transition = 'transform 160ms, opacity 160ms';
-  source.el.style.transform = 'scale(0.35)';
-  source.el.style.opacity = '0';
-  setTimeout(()=> safeRemoveTileById(source.id), 200);
-
-  // 目标放大弹跳提示
-  target.el.classList.add('dragging');
-  target.el.style.transform = 'scale(1.18)';
-  setTimeout(()=>{ target.el.style.transform=''; target.el.classList.remove('dragging'); }, 280);
-
-  // 得分与生成新块
-  score += 10 * (nextLevel + 1);
-  updateScore();
-  setTimeout(()=>{ spawnRandom(BASE_LEVEL); ensurePossibleMerge(); }, 260);
-
-  // 胜利检测
-  if(nextLevel === EMOJIS.length - 1){
-    setTimeout(()=> showWin(nextLevel), 420);
+    if (e.x < 0 || e.x > game.clientWidth - 60) {
+      e.vx *= -0.6;
+    }
+    e.el.style.left = e.x + "px";
+    e.el.style.top = e.y + "px";
   }
 }
 
-// 物理循环：应用重力、速度、简单碰撞分离
-function physicsStep(dt){
-  if(!boardRect) measureBoard();
-  // 移动每个 tile
-  for(const t of tiles){
-    // apply gravity
-    t.vx += gravity.x * dt * GRAVITY_SCALE;
-    t.vy += gravity.y * dt * GRAVITY_SCALE;
-    // integrate
-    t.x += t.vx * dt;
-    t.y += t.vy * dt;
-    // world bounds
-    if(t.x < 6){ t.x = 6; t.vx *= -0.2; }
-    if(t.y < 6){ t.y = 6; t.vy *= -0.2; }
-    const maxX = boardRect.width - t.size - 6;
-    const maxY = boardRect.height - t.size - 6;
-    if(t.x > maxX){ t.x = maxX; t.vx *= -0.2; }
-    if(t.y > maxY){ t.y = maxY; t.vy *= -0.2; }
-  }
-  // 简单碰撞分离（O(n^2)，tile数量受限）
-  for(let i=0;i<tiles.length;i++){
-    for(let j=i+1;j<tiles.length;j++){
-      const a = tiles[i], b = tiles[j];
-      const ax = a.x + a.size/2, ay = a.y + a.size/2;
-      const bx = b.x + b.size/2, by = b.y + b.size/2;
-      const dx = bx-ax, dy = by-ay;
-      const dist = Math.hypot(dx,dy) || 0.0001;
-      const minDist = (a.size + b.size)/2 * 0.92;
-      if(dist < minDist){
-        // push them apart proportional to overlap
-        const overlap = (minDist - dist) / 2;
-        const nx = dx/dist, ny = dy/dist;
-        a.x -= nx * overlap;
-        a.y -= ny * overlap;
-        b.x += nx * overlap;
-        b.y += ny * overlap;
-        // exchange some velocities (inelastic)
-        const rvx = (b.vx - a.vx) * 0.2;
-        const rvy = (b.vy - a.vy) * 0.2;
-        a.vx -= rvx; a.vy -= rvy;
-        b.vx += rvx; b.vy += rvy;
+function checkMerge() {
+  for (let i = 0; i < emojis.length; i++) {
+    for (let j = i + 1; j < emojis.length; j++) {
+      const a = emojis[i], b = emojis[j];
+      if (!a || !b || a.level !== b.level) continue;
+      const dx = a.x - b.x, dy = a.y - b.y;
+      const dist = Math.hypot(dx, dy);
+      if (dist < 45) {
+        const newX = (a.x + b.x) / 2;
+        const newY = (a.y + b.y) / 2;
+        a.el.remove();
+        b.el.remove();
+        emojis.splice(j, 1);
+        emojis.splice(i, 1);
+        const newLevel = Math.min(a.level + 1, EMOJIS.length - 1);
+        createEmoji(newLevel, newX, newY);
+        score += (newLevel + 1) * 10;
+        scoreDisplay.textContent = "分数：" + score;
+        return;
       }
     }
   }
-  // friction
-  for(const t of tiles){ t.vx *= FRICTION; t.vy *= FRICTION; t.el.style.left = t.x + 'px'; t.el.style.top = t.y + 'px'; }
 }
 
-// 动画与合成检测循环
-function loop(ts){
-  if(!lastTimestamp) lastTimestamp = ts;
-  const dt = Math.min(40, ts - lastTimestamp); // ms
-  lastTimestamp = ts;
-  physicsStep(dt/16.67); // 约化为“帧单位”
-  // 合成检测：距中心最近且满足阈值则合并（为了手感）
-  for(let i=0;i<tiles.length;i++){
-    for(let j=i+1;j<tiles.length;j++){
-      const a=tiles[i], b=tiles[j];
-      if(a && b && a.level===b.level && tryMerge(a,b)){
-        // 合并：把 a 合到 b (保持稳定方向)
-        doMerge(a,b);
-        break;
-      }
-    }
-  }
-  // 若没有可合并对且 tile 较多，确保生成一对
-  ensurePossibleMerge();
-  if(animationRunning) requestAnimationFrame(loop);
-}
-requestAnimationFrame(loop);
+setInterval(() => {
+  updatePhysics();
+  checkMerge();
+}, 30);
 
-// 拖拽支持（触摸/鼠标），拖动时会把 tile 置为“拖拽状态”（清零速度）
-function makeDraggable(el){
-  let dragging=false, startX=0, startY=0, offsetX=0, offsetY=0, tile=null;
-  const id = el.dataset.id;
-  function begin(x,y){
-    measureBoard();
-    const idx = findTileIndexById(id);
-    if(idx===-1) return;
-    tile = tiles[idx];
-    dragging=true;
-    el.classList.add('dragging');
-    tile.vx = tile.vy = 0;
-    startX = x; startY = y;
-    offsetX = x - tile.x; offsetY = y - tile.y;
-    el.style.transition = 'transform 0ms';
-  }
-  function move(x,y){
-    if(!dragging || !tile) return;
-    let nx = x - offsetX, ny = y - offsetY;
-    nx = Math.max(6, Math.min(boardRect.width - tile.size - 6, nx));
-    ny = Math.max(6, Math.min(boardRect.height - tile.size - 6, ny));
-    tile.x = nx; tile.y = ny;
-    el.style.left = nx + 'px'; el.style.top = ny + 'px';
-    // 提示将近可合并的 target
-    const {tile:near, dist} = findNearest(tile);
-    if(near && tile.level === near.level && dist < (tile.size+near.size)*0.62){
-      near.el.style.boxShadow = '0 18px 36px rgba(255,120,140,0.22)';
-      near.el.style.transform = 'scale(1.06)';
-    } else {
-      tiles.forEach(t=>{ t.el.style.boxShadow=''; t.el.style.transform=''; });
-    }
-  }
-  function end(){
-    if(!dragging || !tile){ cleanup(); return; }
-    const {tile:near, dist} = findNearest(tile);
-    if(near && tryMerge(tile, near)){
-      // 合并 tile -> near
-      doMerge(tile, near);
-    } else {
-      // 把拖动释放的速度设置为零，轻微回弹（已经在物理循环里）
-      tile.vx = 0; tile.vy = 0;
-    }
-    tiles.forEach(t=>{ t.el.style.boxShadow=''; t.el.style.transform=''; });
-    el.classList.remove('dragging');
-    dragging=false; tile=null;
-  }
-  function cleanup(){ dragging=false; tile=null; el.classList.remove('dragging'); }
+setInterval(spawn, 2000);
 
-  // touch
-  el.addEventListener('touchstart', (e)=>{ e.preventDefault(); const t=e.changedTouches[0]; begin(t.clientX - boardRect.left, t.clientY - boardRect.top); }, {passive:false});
-  el.addEventListener('touchmove', (e)=>{ e.preventDefault(); const t=e.changedTouches[0]; move(t.clientX - boardRect.left, t.clientY - boardRect.top); }, {passive:false});
-  el.addEventListener('touchend', (e)=>{ e.preventDefault(); end(); }, {passive:false});
-  el.addEventListener('touchcancel', (e)=>{ cleanup(); }, {passive:false});
-
-  // mouse
-  el.addEventListener('mousedown', (e)=>{ e.preventDefault(); begin(e.clientX - boardRect.left, e.clientY - boardRect.top);
-    function onMove(ev){ move(ev.clientX - boardRect.left, ev.clientY - boardRect.top); }
-    function onUp(){ end(); window.removeEventListener('mousemove', onMove); window.removeEventListener('mouseup', onUp); }
-    window.addEventListener('mousemove', onMove); window.addEventListener('mouseup', onUp);
+// 手机重力控制
+if (window.DeviceMotionEvent) {
+  window.addEventListener("devicemotion", (e) => {
+    const g = e.accelerationIncludingGravity;
+    for (let emo of emojis) {
+      emo.vx += g.x * 0.1;
+      emo.vy -= g.y * 0.1;
+    }
   });
 }
-
-// 分享与 UI
-shareBtn.addEventListener('click', ()=>{ navigator.clipboard?.writeText(location.href).then(()=>alert('已复制链接')); });
-resetBtn.addEventListener('click', ()=> init());
-winReset.addEventListener('click', ()=>{ init(); hideWin(); });
-closeWin.addEventListener('click', ()=> hideWin());
-
-function showWin(level){ winEmoji.textContent = EMOJIS[level]; overlay.style.display = 'flex'; overlay.style.pointerEvents = 'auto'; }
-function hideWin(){ overlay.style.display = 'none'; overlay.style.pointerEvents = 'none'; updateScore(); }
-
-// 初始化：测量并生成
-function init(){
-  tiles.forEach(t=>{ try{ if(t.el && t.el.parentNode) t.el.parentNode.removeChild(t.el); }catch(e){} });
-  tiles = []; score=0; tileIdCounter=1; updateScore(); board.innerHTML=''; document.getElementById('overlay').style.display='none';
-  measureBoard();
-  for(let i=0;i<SPAWN_COUNT_INITIAL;i++) spawnRandom(BASE_LEVEL);
-  // 确保至少存在一个可合并对以避免立即死局
-  ensurePossibleMerge();
-}
-
-// 设备方向（重力）处理
-function handleOrientation(e){
-  // e.beta (front-back, -180..180), e.gamma (left-right, -90..90)
-  // 我们将 gamma -> x, beta -> y
-  const gamma = e.gamma || 0;
-  const beta = e.beta || 0;
-  // 映射为小的重力向量
-  gravity.x = Math.max(-1, Math.min(1, gamma / 60)); // normalize
-  gravity.y = Math.max(-1, Math.min(1.8, (beta - 30) / 90 + 0.5)); // make downward bias
-}
-if(window.DeviceOrientationEvent){
-  window.addEventListener('deviceorientation', (e)=>{ handleOrientation(e); }, true);
-} else {
-  // fallback: small constant gravity
-  gravity = {x:0, y:0.6};
-}
-
-// 防止页面滚动影响游戏（移动端）
-let touchStartY = null;
-document.addEventListener('touchstart', (e)=>{ touchStartY = e.touches[0].clientY; }, {passive:true});
-document.addEventListener('touchmove', (e)=>{
-  const t = e.touches[0];
-  const el = document.elementFromPoint(t.clientX, t.clientY);
-  if(el && (el.closest && el.closest('.board'))){ e.preventDefault(); }
-},{passive:false});
-
-// 窗口变化时重新测量
-window.addEventListener('resize', ()=> measureBoard());
-
-// 首次加载
-window.addEventListener('load', ()=>{ setTimeout(()=>{ measureBoard(); init(); }, 160); });
-
 </script>
 </body>
 </html>
