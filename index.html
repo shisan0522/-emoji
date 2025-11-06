@@ -2,32 +2,37 @@
 <html lang="zh-CN">
 <head>
 <meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>合成Emoji · 重力版</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
+<title>合成Emoji · 奶油粉重力版</title>
 <style>
+  @import url('https://fonts.googleapis.com/css2?family=Quicksand:wght@600&display=swap');
+
   body {
     margin: 0;
-    background: linear-gradient(180deg, #fff8f3 0%, #ffeef5 100%);
-    font-family: "SF Pro Rounded", "Segoe UI", sans-serif;
-    overflow: hidden;
+    background: linear-gradient(180deg, #fff9f4 0%, #ffeef6 100%);
+    font-family: 'Quicksand', 'PingFang SC', 'Helvetica Neue', sans-serif;
     display: flex;
     flex-direction: column;
     align-items: center;
     height: 100vh;
     color: #5a4a42;
+    overflow: hidden;
+    touch-action: none;
   }
 
   h1 {
-    font-size: 1.4rem;
-    margin: 16px;
+    font-size: 1.5rem;
+    margin: 14px;
+    color: #f08ba0;
+    text-shadow: 0 2px 6px rgba(240,139,160,0.2);
   }
 
   #score {
-    background: #fff4f4;
-    padding: 6px 14px;
-    border-radius: 18px;
-    box-shadow: 0 2px 6px rgba(0,0,0,0.1);
-    font-weight: 600;
+    background: #fff5f7;
+    padding: 6px 18px;
+    border-radius: 20px;
+    box-shadow: 0 3px 10px rgba(240,139,160,0.15);
+    font-weight: bold;
   }
 
   #game {
@@ -35,34 +40,36 @@
     flex: 1;
     width: 90%;
     max-width: 400px;
-    background: rgba(255, 255, 255, 0.8);
+    background: rgba(255, 255, 255, 0.85);
     border-radius: 30px;
-    box-shadow: inset 0 0 15px rgba(0,0,0,0.05);
+    box-shadow: inset 0 0 20px rgba(255,182,193,0.2);
     overflow: hidden;
   }
 
   .emoji {
     position: absolute;
-    font-size: 40px;
+    font-size: 48px;
     user-select: none;
-    transition: transform 0.1s;
+    touch-action: none;
+    transition: transform 0.15s;
+    cursor: grab;
   }
 
   #tip {
-    margin: 12px;
+    margin: 10px;
     font-size: 0.9rem;
     opacity: 0.6;
   }
 </style>
 </head>
 <body>
-  <h1>🍬 合成Emoji（重力版）</h1>
+  <h1>🍓 合成Emoji</h1>
   <div id="score">分数：0</div>
   <div id="game"></div>
-  <div id="tip">提示：拖动相同表情合成更高级；也可以摇晃手机让它们滑动 🍑</div>
+  <div id="tip">提示：拖动相同表情可合成更高级；倾斜手机它们会滑动 💕</div>
 
 <script>
-const EMOJIS = ["🥺", "🤤", "🥰", "🍑", "🍓", "🍎", "🍉", "🍋", "🥐", "🍔", "🥞", "🍤", "🥮", "🍘", "🎂", "🍮", "❤️"];
+const EMOJIS = ["🥺","🤤","🥰","🍑","🍓","🍎","🍉","🍋","🥐","🍔","🥞","🍤","🥮","🍘","🎂","🍮","❤️"];
 const game = document.getElementById("game");
 const scoreDisplay = document.getElementById("score");
 let score = 0;
@@ -76,11 +83,34 @@ function createEmoji(level, x, y) {
   div.textContent = EMOJIS[level];
   div.style.left = x + "px";
   div.style.top = y + "px";
-  div.style.fontSize = (sizeBase + level * 4) + "px";
+  div.style.fontSize = (sizeBase + level * 3) + "px";
   game.appendChild(div);
 
   const obj = { el: div, level, x, y, vx: 0, vy: 0 };
   emojis.push(obj);
+
+  // 触摸拖动事件
+  let offsetX = 0, offsetY = 0, isDragging = false;
+  div.addEventListener("touchstart", e => {
+    isDragging = true;
+    const t = e.touches[0];
+    offsetX = t.clientX - obj.x;
+    offsetY = t.clientY - obj.y;
+    div.style.transform = "scale(1.2)";
+  });
+  div.addEventListener("touchmove", e => {
+    if (!isDragging) return;
+    const t = e.touches[0];
+    obj.x = t.clientX - offsetX;
+    obj.y = t.clientY - offsetY;
+    div.style.left = obj.x + "px";
+    div.style.top = obj.y + "px";
+  });
+  div.addEventListener("touchend", () => {
+    isDragging = false;
+    div.style.transform = "scale(1)";
+  });
+
   return obj;
 }
 
@@ -137,11 +167,21 @@ setInterval(() => {
   checkMerge();
 }, 30);
 
-setInterval(spawn, 2000);
+setInterval(spawn, 2500);
 
-// 手机重力控制
-if (window.DeviceMotionEvent) {
-  window.addEventListener("devicemotion", (e) => {
+// 请求运动权限（iPhone专用）
+function requestMotionPermission() {
+  if (typeof DeviceMotionEvent !== "undefined" && typeof DeviceMotionEvent.requestPermission === "function") {
+    DeviceMotionEvent.requestPermission().then(res => {
+      if (res === "granted") enableGravity();
+    });
+  } else {
+    enableGravity();
+  }
+}
+
+function enableGravity() {
+  window.addEventListener("devicemotion", e => {
     const g = e.accelerationIncludingGravity;
     for (let emo of emojis) {
       emo.vx += g.x * 0.1;
@@ -149,6 +189,8 @@ if (window.DeviceMotionEvent) {
     }
   });
 }
+
+requestMotionPermission();
 </script>
 </body>
 </html>
